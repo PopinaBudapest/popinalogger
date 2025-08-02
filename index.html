@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cleaning & Electricity Log</title>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 1000px;
+      margin: 1rem auto;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .section-title::before,
+    .section-title::after {
+      content: "";
+      flex: 1;
+      border-bottom: 2px solid #ccc;
+      margin: 0 10px;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.5rem;
+      max-width: 1000px;
+      margin: 0 auto 1rem auto;
+    }
+
+    .buttons button,
+    #saveButton {
+      padding: 0.75rem;
+      font-size: 1.2rem;
+      background: #357993;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      height: 60px;
+    }
+
+    #commentBox {
+      display: block;
+      margin: 0.5rem auto;
+      width: 100%;
+      max-width: 1000px;
+      padding: 0.4rem;
+      font-size: 1.2rem;
+      height: 60px;
+      box-sizing: border-box;
+    }
+
+    .electricity-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      max-width: 1000px;
+      margin: 1rem auto;
+      align-items: stretch;
+    }
+
+    #saveButton,
+    #electricityValue,
+    #electricityComment {
+      height: 60px;
+      font-size: 1.2rem;
+    }
+
+    #saveButton {
+      flex: 0 0 100px;
+    }
+
+    #electricityValue {
+      width: 80px;
+      text-align: center;
+      padding: 0.4rem;
+      box-sizing: border-box;
+    }
+
+    #electricityComment {
+      flex: 1;
+      padding: 0.4rem;
+      box-sizing: border-box;
+    }
+
+    iframe {
+      display: block;
+      margin: 1rem auto;
+      width: 100%;
+      max-width: 1000px;
+      height: 300px; 
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cleaning Section -->
+  <div class="section-title">Takarítási Napló</div>
+  <div class="buttons">
+    <button data-col="1">Konyha</button>
+    <button data-col="2">WC</button>
+    <button data-col="3">Raktár</button>
+    <button data-col="4">Alsó szint</button>
+    <button data-col="5">Felső szint</button>
+  </div>
+
+  <input type="text" id="commentBox" placeholder="Komment">
+
+  <!-- Electricity Section -->
+  <div class="section-title">Fogyasztási Napló</div>
+  <div class="electricity-row">
+    <button id="saveButton">Ment</button>
+    <input type="text" id="electricityValue" maxlength="5" placeholder="KWh">
+    <input type="text" id="electricityComment" placeholder="Komment">
+  </div>
+
+  <iframe id="sheetFrame"></iframe>
+
+  <script src="config.js"></script>
+  <script>
+    const sheetFrame = document.getElementById("sheetFrame");
+    sheetFrame.src = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/edit?rm=demo`;
+
+    // Cleaning buttons
+    document.querySelectorAll(".buttons button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const comment = document.getElementById("commentBox").value;
+        fetch(CONFIG.apiUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ col: btn.dataset.col, comment })
+        });
+        document.getElementById("commentBox").value = "";
+      });
+    });
+
+    // Electricity "Ment" button
+    document.getElementById("saveButton").addEventListener("click", () => {
+      const value = document.getElementById("electricityValue").value;
+      const comment = document.getElementById("electricityComment").value;
+      fetch(CONFIG.apiUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ save: true, number: value, longComment: comment })
+      });
+      document.getElementById("electricityValue").value = "";
+      document.getElementById("electricityComment").value = "";
+    });
+
+    // Allow Enter key for quick submit
+    document.getElementById("electricityValue").addEventListener("keypress", e => {
+      if (e.key === "Enter") document.getElementById("saveButton").click();
+    });
+    document.getElementById("electricityComment").addEventListener("keypress", e => {
+      if (e.key === "Enter" && e.ctrlKey) document.getElementById("saveButton").click();
+    });
+  </script>
+
+</body>
+</html>
